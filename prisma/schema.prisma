@@ -1,0 +1,107 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum Plan {
+  STARTER
+  PRO
+  AGENCY
+}
+
+enum CrmStatus {
+  NOUVEAU
+  CONTACTE
+  REPONDU
+  RDV_PRIS
+  SIGNE
+  REFUS
+}
+
+model User {
+  id                String     @id
+  email             String     @unique
+  plan              Plan       @default(STARTER)
+  stripeCustomerId  String?    @unique
+  stripeSubId       String?    @unique
+  serperKey         String?
+  claudeKey         String?
+  papsersKey        String?
+  gmbKey            String?
+  signatureName     String?
+  signatureTitle    String?
+  signatureEntity   String?
+  signatureTelMa    String?
+  signatureTelFr    String?
+  signatureEmail    String?
+  signatureCity     String?
+  searchesThisMonth Int        @default(0)
+  mailsThisMonth    Int        @default(0)
+  periodResetAt     DateTime   @default(now())
+  searches          Search[]
+  prospects         Prospect[]
+  createdAt         DateTime   @default(now())
+  updatedAt         DateTime   @updatedAt
+}
+
+model Search {
+  id           String     @id @default(cuid())
+  userId       String
+  query        String
+  country      String
+  lang         String     @default("fr")
+  totalResults Int        @default(0)
+  createdAt    DateTime   @default(now())
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  prospects    Prospect[]
+}
+
+model Prospect {
+  id             String    @id @default(cuid())
+  userId         String
+  searchId       String?
+  domain         String
+  url            String
+  title          String?
+  snippet        String?
+  serpPosition   Int?
+  obsScore       Int       @default(0)
+  mobileScore    Int       @default(0)
+  seoScore       Int       @default(0)
+  speedScore     Int       @default(0)
+  cms            String?
+  phoneFixe      String?
+  phoneMobile    String?
+  emailContact   String?
+  ownerName      String?
+  domainCreated  String?
+  registrar      String?
+  siret          String?
+  dirigeant      String?
+  formeJuridique String?
+  reseaux        Json?
+  https          Boolean   @default(false)
+  gmbRating      Float?
+  gmbAddress     String?
+  gmbPhone       String?
+  mailObjet      String?
+  mailCorps      String?
+  crmStatus      CrmStatus @default(NOUVEAU)
+  notes          String?
+  tags           String[]
+  enriched       Boolean   @default(false)
+  enrichedAt     DateTime?
+  reminderAt     DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  search         Search?   @relation(fields: [searchId], references: [id])
+
+  @@index([userId, crmStatus])
+  @@index([userId, createdAt])
+}
